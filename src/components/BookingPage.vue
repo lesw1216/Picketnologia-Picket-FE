@@ -2,12 +2,13 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
-import Stomp from 'stompjs'
 import PortOne from '@portone/browser-sdk/v2'
 import Calendar from '@/components/Calendar.vue'
 
 import productAPI from '@/api/product'
 import paymentAPI from '@/api/payment'
+
+import { Client } from '@stomp/stompjs'
 
 const router = useRouter()
 const route = useRoute()
@@ -67,111 +68,91 @@ const paymentForm = ref({
 const userStore = useUserStore()
 const myNickname = userStore.nickname
 
-const seatSocket = ref(null)
-const connectWebSocket = () => {
-  const ws = new WebSocket(import.meta.env.VITE_WS_URL)
-  const client = Stomp.over(ws)
-  seatSocket.value = client
-  client.connect(
-    {},
-    (frame) => {
-      client.subscribe(
-        `/topic/seats/${selectedTime.value.idx}`,
-        (msg) => {
-          const received = JSON.parse(msg.body)
-          const { seatName, sender, action, seatIdx } = received
+const seatSocketClient = new Client({
+  brokerURL: import.meta.env.VITE_WS_URL,
+  reconnectDelay: 5000,
+  debug: function (str) {
+    console.log(str)
+  },
+})
 
-          // 송신자와 나의 닉네임이 같지 않으면
-          if (sender !== myNickname) {
-            // action이 select이면
-            if (action === 'select') {
-              // 잠긴 좌석 목록에 해당 좌석이 없으면
-              if (!disabledSeats.value.includes(seatName)) {
-                // 잠긴 좌석 목록에 추가한다.
-                disabledSeats.value.push(seatName)
-                console.log('다른 유저 선택으로 블락된 좌석:', seatName)
-              }
-            } else if (action === 'deselect') {
+seatSocketClient.onConnect = (frame) => {
+  console.log('웹소켓 연결 성공:', frame)
 
-              // 좌석 이름으로 인덱스 조회
-              const index = disabledSeats.value.indexOf(seatName)
+  // 좌석 선택 구독
+  seatSocketClient.subscribe(
+    `/topic/seats/${selectedTime.value.idx}`,
+    (msg) => {
+      const received = JSON.parse(msg.body)
+      const { seatName, sender, action } = received
 
-              // 인덱스가 있으면 제거
-              if (index !== -1)
-                disabledSeats.value.splice(index, 1)
-              console.log('다른 유저 해제로 블락 해제된 좌석:', seatName)
-            }
+      // 송신자와 나의 닉네임이 같지 않으면
+      if (sender !== myNickname) {
+        // action이 select이면
+        if (action === 'select') {
+          // 잠긴 좌석 목록에 해당 좌석이 없으면
+          if (!disabledSeats.value.includes(seatName)) {
+            // 잠긴 좌석 목록에 추가한다.
+            disabledSeats.value.push(seatName)
+            console.log('다른 유저 선택으로 블락된 좌석:', seatName)
           }
-        },
-      )
+        } else if (action === 'deselect') {
+
+          // 좌석 이름으로 인덱스 조회
+          const index = disabledSeats.value.indexOf(seatName)
+
+          // 인덱스가 있으면 제거
+          if (index !== -1)
+            disabledSeats.value.splice(index, 1)
+          console.log('다른 유저 해제로 블락 해제된 좌석:', seatName)
+        }
+      }
     },
-    (err) => {
-      console.error('웹소켓 연결 실패:', err)
+  )
+
+  seatSocketClient.subscribe(
+    `/topic/seats/map/${selectedTime.value.idx}`,
+    (msg) => {
+      const rockSeats = JSON.parse(msg.body)
+      console.log("좌석 맵" + rockSeats)
+      const keys = Object.keys(rockSeats).map(Number)
+
+      const rockedSeats = seats.value.filter(seat => {
+        return rockSeats.includes(seat.idx)
+      }).map(seat => seat.name)
+
+      disabledSeats.value = disabledSeats.value.filter(seat => {
+        return !rockedSeats.includes(seat)
+      })
+    },
+  )
+
+  seatSocketClient.subscribe(
+    `/topic/seats/expired/${selectedTime.value.idx}`,
+    (msg) => {
+      const rockSeatId = JSON.parse(msg.body)
+
+      const rockedSeats = seats.value.filter(seat => {
+        return seat.idx === rockSeatId
+      }).map(seat => seat.name)
+
+      disabledSeats.value = disabledSeats.value.filter(seat => {
+        return !rockedSeats.includes(seat)
+      })
+
+      const findIdx = selectedSeats.value.findIndex(seat => seat.idx === rockSeatId)
+      selectedSeats.value.splice(findIdx, 1)
     },
   )
 }
 
-const seatMapSocket = ref(null)
-const connectionSeatMap = () => {
-  const ws = new WebSocket(import.meta.env.VITE_WS_URL)
-  const client = Stomp.over(ws)
-  seatMapSocket.value = client
-  client.connect(
-    {},
-    (frame) => {
-      client.subscribe(
-        `/topic/seats/map/${selectedTime.value.idx}`,
-        (msg) => {
-          const rockSeats = JSON.parse(msg.body)
-          console.log("좌석 맵" + rockSeats)
-          const keys = Object.keys(rockSeats).map(Number)
+const connectSeatSocket = () => {
 
-          const rockedSeats = seats.value.filter(seat => {
-            return rockSeats.includes(seat.idx)
-          }).map(seat => seat.name)
+  if (seatSocketClient.active) {
+    seatSocketClient.deactivate()
+  }
 
-          disabledSeats.value = disabledSeats.value.filter(seat => {
-            return !rockedSeats.includes(seat)
-          })
-        },
-      )
-    },
-    (err) => {
-      console.error('웹소켓 연결 실패:', err)
-    },
-  )
-}
-
-const seatExpiredSocket = ref(null)
-const connectionseatExpiredSocket = () => {
-  const ws = new WebSocket(import.meta.env.VITE_WS_URL)
-  const client = Stomp.over(ws)
-  seatExpiredSocket.value = client
-  client.connect(
-    {},
-    (frame) => {
-      client.subscribe(
-        `/topic/seats/expired/${selectedTime.value.idx}`,
-        (msg) => {
-          const rockSeatId = JSON.parse(msg.body)
-
-          const rockedSeats = seats.value.filter(seat => {
-            return seat.idx === rockSeatId
-          }).map(seat => seat.name)
-
-          disabledSeats.value = disabledSeats.value.filter(seat => {
-            return !rockedSeats.includes(seat)
-          })
-
-          const findIdx = selectedSeats.value.findIndex(seat => seat.idx === rockSeatId)
-          selectedSeats.value.splice(findIdx, 1)
-        },
-      )
-    },
-    (err) => {
-      console.error('웹소켓 연결 실패:', err)
-    },
-  )
+  seatSocketClient.activate()
 }
 
 // 좌석 정보를 불러 온다.
@@ -229,30 +210,28 @@ function toggleSeat(seat) {
   const idx = selectedSeats.value.findIndex((s) => s.name === seat.name)
   if (idx >= 0) {
     selectedSeats.value.splice(idx, 1)
-    // 좌석 해제 메시지 전송
-    seatSocket.value.send(
-      `/order/seats/${selectedTime.value.idx}`,
-      {},
-      JSON.stringify({
+
+    seatSocketClient.publish({
+      destination: `/order/seats/${selectedTime.value.idx}`,
+      body: JSON.stringify({
         seatName: seat.name,
         sender: myNickname,
         action: 'deselect', // 해제 action
         seatIdx: seat.idx
       }),
-    )
+    })
   } else {
     selectedSeats.value.push(seat)
-    //좌석 선택 메시지 전송에 action 추가
-    seatSocket.value.send(
-      `/order/seats/${selectedTime.value.idx}`,
-      {},
-      JSON.stringify({
+
+    seatSocketClient.publish({
+      destination: `/order/seats/${selectedTime.value.idx}`,
+      body: JSON.stringify({
         seatName: seat.name,
         sender: myNickname,
         action: 'select', // 선택 action
         seatIdx: seat.idx
       }),
-    )
+    })
   }
 }
 
@@ -263,9 +242,7 @@ const nextStep = async () => {
     if (!selectedTime.value) return alert('회차를 선택하세요.')
 
     step.value++
-    connectWebSocket()
-    connectionSeatMap()
-    connectionseatExpiredSocket()
+    connectSeatSocket()
 
     await loadSeatInfo()
     openModal.value = false
