@@ -82,22 +82,7 @@ seatSocketClient.onConnect = (frame) => {
   // 좌석 선택 구독
   seatSocketClient.subscribe(`/topic/seats/${selectedTime.value.idx}`, callbackSeatSelect)
 
-  seatSocketClient.subscribe(
-    `/topic/seats/map/${selectedTime.value.idx}`,
-    (msg) => {
-      const rockSeats = JSON.parse(msg.body)
-      console.log("좌석 맵" + rockSeats)
-      const keys = Object.keys(rockSeats).map(Number)
-
-      const rockedSeats = seats.value.filter(seat => {
-        return rockSeats.includes(seat.idx)
-      }).map(seat => seat.name)
-
-      disabledSeats.value = disabledSeats.value.filter(seat => {
-        return !rockedSeats.includes(seat)
-      })
-    },
-  )
+  seatSocketClient.subscribe(`/topic/seats/map/${selectedTime.value.idx}`, callbackSeatMap)
 
   seatSocketClient.subscribe(
     `/topic/seats/expired/${selectedTime.value.idx}`,
@@ -143,6 +128,20 @@ const callbackSeatSelect = (message) => {
       console.log('다른 유저 해제로 블락 해제된 좌석:', seatName)
     }
   }
+}
+
+const callbackSeatMap = (message) => {
+  const rockSeats = JSON.parse(message.body)
+  console.log("좌석 맵" + rockSeats)
+  // const keys = Object.keys(rockSeats).map(Number)
+
+  const rockedSeats = seats.value.filter(seat => {
+    return rockSeats.includes(seat.idx)
+  }).map(seat => seat.name)
+
+  disabledSeats.value = disabledSeats.value.filter(seat => {
+    return !rockedSeats.includes(seat)
+  })
 }
 
 const connectSeatSocket = () => {
