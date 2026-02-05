@@ -82,25 +82,30 @@ seatSocketClient.onConnect = (frame) => {
   // 좌석 선택 구독
   seatSocketClient.subscribe(`/topic/seats/${selectedTime.value.idx}`, callbackSeatSelect)
 
+  // 좌석 맵 구독
   seatSocketClient.subscribe(`/topic/seats/map/${selectedTime.value.idx}`, callbackSeatMap)
 
-  seatSocketClient.subscribe(
-    `/topic/seats/expired/${selectedTime.value.idx}`,
-    (msg) => {
-      const rockSeatId = JSON.parse(msg.body)
+  // 좌석 예약 만료 구독
+  seatSocketClient.subscribe(`/topic/seats/expired/${selectedTime.value.idx}`, callbackSeatExpire)
+}
 
-      const rockedSeats = seats.value.filter(seat => {
-        return seat.idx === rockSeatId
-      }).map(seat => seat.name)
+/**
+ * 좌석 예약 만료 콜백 함수
+ * @param message 메시지 브로커가 전달한 메시지
+ */
+const callbackSeatExpire = (message) => {
+  const rockSeatId = JSON.parse(message.body)
 
-      disabledSeats.value = disabledSeats.value.filter(seat => {
-        return !rockedSeats.includes(seat)
-      })
+  const rockedSeats = seats.value.filter(seat => {
+    return seat.idx === rockSeatId
+  }).map(seat => seat.name)
 
-      const findIdx = selectedSeats.value.findIndex(seat => seat.idx === rockSeatId)
-      selectedSeats.value.splice(findIdx, 1)
-    },
-  )
+  disabledSeats.value = disabledSeats.value.filter(seat => {
+    return !rockedSeats.includes(seat)
+  })
+
+  const findIdx = selectedSeats.value.findIndex(seat => seat.idx === rockSeatId)
+  selectedSeats.value.splice(findIdx, 1)
 }
 
 const callbackSeatSelect = (message) => {
