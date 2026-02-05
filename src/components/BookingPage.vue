@@ -80,35 +80,7 @@ seatSocketClient.onConnect = (frame) => {
   console.log('웹소켓 연결 성공:', frame)
 
   // 좌석 선택 구독
-  seatSocketClient.subscribe(
-    `/topic/seats/${selectedTime.value.idx}`,
-    (msg) => {
-      const received = JSON.parse(msg.body)
-      const { seatName, sender, action } = received
-
-      // 송신자와 나의 닉네임이 같지 않으면
-      if (sender !== myNickname) {
-        // action이 select이면
-        if (action === 'select') {
-          // 잠긴 좌석 목록에 해당 좌석이 없으면
-          if (!disabledSeats.value.includes(seatName)) {
-            // 잠긴 좌석 목록에 추가한다.
-            disabledSeats.value.push(seatName)
-            console.log('다른 유저 선택으로 블락된 좌석:', seatName)
-          }
-        } else if (action === 'deselect') {
-
-          // 좌석 이름으로 인덱스 조회
-          const index = disabledSeats.value.indexOf(seatName)
-
-          // 인덱스가 있으면 제거
-          if (index !== -1)
-            disabledSeats.value.splice(index, 1)
-          console.log('다른 유저 해제로 블락 해제된 좌석:', seatName)
-        }
-      }
-    },
-  )
+  seatSocketClient.subscribe(`/topic/seats/${selectedTime.value.idx}`, callbackSeatSelect)
 
   seatSocketClient.subscribe(
     `/topic/seats/map/${selectedTime.value.idx}`,
@@ -144,6 +116,33 @@ seatSocketClient.onConnect = (frame) => {
       selectedSeats.value.splice(findIdx, 1)
     },
   )
+}
+
+const callbackSeatSelect = (message) => {
+  const received = JSON.parse(message.body)
+  const { seatName, sender, action } = received
+
+  // 송신자와 나의 닉네임이 같지 않으면
+  if (sender !== myNickname) {
+    // action이 select이면
+    if (action === 'select') {
+      // 잠긴 좌석 목록에 해당 좌석이 없으면
+      if (!disabledSeats.value.includes(seatName)) {
+        // 잠긴 좌석 목록에 추가한다.
+        disabledSeats.value.push(seatName)
+        console.log('다른 유저 선택으로 블락된 좌석:', seatName)
+      }
+    } else if (action === 'deselect') {
+
+      // 좌석 이름으로 인덱스 조회
+      const index = disabledSeats.value.indexOf(seatName)
+
+      // 인덱스가 있으면 제거
+      if (index !== -1)
+        disabledSeats.value.splice(index, 1)
+      console.log('다른 유저 해제로 블락 해제된 좌석:', seatName)
+    }
+  }
 }
 
 const connectSeatSocket = () => {
