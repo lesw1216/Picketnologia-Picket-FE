@@ -54,6 +54,7 @@ const step = ref(1)
 const seats = ref([])
 const isLoading = ref(true)
 const loadError = ref(null)
+const isPaymentProcessing = ref(false)
 
 const roundTimes = ref([])
 
@@ -298,49 +299,124 @@ watch(() => step.value, (newValue) => {
   }
 })
 
+const pollPaymentStatus = async (paymentIdx) => {
+  const MAX_RETRY = 30
+  const INTERVAL_MS = 1000
+
+  for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
+    try {
+      const paymentStatusResponse = await paymentAPI.getPaymentStatus(paymentIdx)
+
+      // API 호출 실패 시
+      if (!paymentStatusResponse.success) {
+        return { success: false, reason: 'API_ERROR' }
+      }
+
+      const status = paymentStatusResponse.results?.status
+
+      // 결제 완료
+      if (status === 'PAID') {
+        return { success: true }
+      }
+
+      if (status == 'CANCELLED') {
+        return { success: false, reason: 'CANCELLED' }
+      }
+
+      if (status == 'FAILED') {
+        return { success: false, reason: 'FAILED' }
+      }
+
+      // 결제 진행 중
+      if (status === 'PENDING') {
+        await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS))
+      }
+
+    } catch (error) {
+      console.error('결제 상태 조회 실패:', error)
+      return { success: false, reason: 'NETWORK_ERROR' }
+    }
+  }
+
+  return { success: false, reason: 'TIMEOUT' }
+}
+
 // 결제를 진행하는 메서드
 const onSubmit = async () => {
-  const validteResponse = await paymentAPI.validateSeats({
-    productIdx: paymentForm.value.productIdx,
-    roundTimeIdx: paymentForm.value.roundTimeIdx,
-    seatIdxes: paymentForm.value.seatIdxes,
-  })
+  if (isPaymentProcessing.value) {
+    return
+  }
 
-  const successValidateSeats = validteResponse.success
+  isPaymentProcessing.value = true
+  paymentForm.value.seatIdxes = selectedSeats.value.map((seat) => seat.idx)
 
-  // 좌석 검증이 성공하면 결제 진행
-  if (successValidateSeats) {
-    // 서버에서 PaymentIdx를 받는다.
-    const paymentIdx = validteResponse.results.paymentIdx
-
-    paymentForm.value.seatIdxes = selectedSeats.value.map((seat) => seat.idx)
-
-    const totalAmount = totalPrice.value
-    // const productIdxList = selectedSeats.value.map((s) => s.name)
-    const paymentResponse = await PortOne.requestPayment({
-      storeId: 'store-1ced0aba-9a78-47c4-a424-d03a4685fdd7',
-      channelKey: 'channel-key-31b66752-13a4-429f-8a6f-ec087910a6d9',
-      paymentId: paymentIdx,
-      orderName: props.productName,
-      totalAmount: totalAmount,
-      currency: 'KRW',
-      payMethod: 'CARD',
-      customData: {
-        productIdx: paymentForm.value.productIdx,
-        roundTimeIdx: paymentForm.value.roundTimeIdx,
-        seatIdxes: paymentForm.value.seatIdxes,
-      },
+  try {
+    const validteResponse = await paymentAPI.validateSeats({
+      productIdx: paymentForm.value.productIdx,
+      roundTimeIdx: paymentForm.value.roundTimeIdx,
+      seatIdxes: paymentForm.value.seatIdxes,
     })
 
-    if (!paymentResponse.code) {
-      router.push('/payment/result')
+    const successValidateSeats = validteResponse.success
+
+    // 좌석 검증이 성공하면 결제 진행
+    if (successValidateSeats) {
+
+      // 서버에서 PaymentIdx를 받는다.
+      const paymentIdx = validteResponse.results.paymentIdx
+      const totalAmount = totalPrice.value
+
+      // const productIdxList = selectedSeats.value.map((s) => s.name)
+      const paymentResponse = await PortOne.requestPayment({
+        storeId: 'store-1ced0aba-9a78-47c4-a424-d03a4685fdd7',
+        channelKey: 'channel-key-31b66752-13a4-429f-8a6f-ec087910a6d9',
+        paymentId: paymentIdx,
+        orderName: props.productName,
+        totalAmount: totalAmount,
+        currency: 'KRW',
+        payMethod: 'CARD',
+        customData: {
+          productIdx: paymentForm.value.productIdx,
+          roundTimeIdx: paymentForm.value.roundTimeIdx,
+          seatIdxes: paymentForm.value.seatIdxes,
+        },
+      })
+
+      // 포트원 결제 요청 실패 시
+      if (paymentResponse?.code) {
+        alert('결제가 취소되었거나 실패했습니다.')
+        router.push(`/products/${paymentForm.value.productIdx}`)
+        return
+      }
+
+      const pollResult = await pollPaymentStatus(paymentIdx)
+
+      // 폴링 요청이 실패한 경우
+      if (!pollResult.success) {
+
+        if (pollResult.reason === 'TIMEOUT') {
+          alert('결제 처리 지연입니다. 잠시 후 예매내역에서 확인해주세요.')
+          router.push(`/products/${paymentForm.value.productIdx}`)
+          return
+        }
+
+        alert('결제 실패')
+        router.push(`/products/${paymentForm.value.productIdx}`)
+        return
+      }
+
+      // 폴링 요청으로 결제 성공을 확인한 경우
+      router.push({
+        path: '/payment/result',
+        query: { paymentId: paymentIdx },
+      })
     } else {
-      console.log(paymentResponse.code)
+      console.log('결제 오류')
+      alert(validteResponse.message)
+      return
     }
-  } else {
-    console.log('결제 오류')
-    alert(validteResponse.message)
-    return
+  } finally {
+    isPaymentProcessing.value = false
   }
 }
 
@@ -560,8 +636,22 @@ onUnmounted(() => {
                 <p><strong>총 금액:</strong> {{ totalPrice.toLocaleString() }} 원</p>
               </div>
               <div class="d-flex gap-2 flex-column w-100">
-                <button class="btn btn-dark btn-lg" @click="nextStep">결제하기</button>
-                <button class="btn btn-light border btn-lg" @click="prevStep">이전</button>
+                <div v-if="isPaymentProcessing" class="alert alert-light d-flex align-items-center gap-2 mb-0"
+                  role="alert">
+                  <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <span>결제 진행 중입니다. 잠시만 기다려주세요.</span>
+                </div>
+                <button class="btn btn-dark btn-lg" @click="nextStep" :disabled="isPaymentProcessing">
+                  <span v-if="isPaymentProcessing" class="d-inline-flex align-items-center gap-2">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    결제 진행 중...
+                  </span>
+                  <span v-else>결제하기</span>
+                </button>
+                <button class="btn btn-light border btn-lg" @click="prevStep"
+                  :disabled="isPaymentProcessing">이전</button>
               </div>
             </div>
           </div>
