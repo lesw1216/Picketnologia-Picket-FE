@@ -385,6 +385,7 @@ const onSubmit = async () => {
       // 포트원 결제 요청 실패 시
       if (paymentResponse?.code) {
         alert('결제가 취소되었거나 실패했습니다.')
+        router.push(`/products/${paymentForm.value.productIdx}`)
         return
       }
 
@@ -395,10 +396,12 @@ const onSubmit = async () => {
 
         if (pollResult.reason === 'TIMEOUT') {
           alert('결제 처리 지연입니다. 잠시 후 예매내역에서 확인해주세요.')
+          router.push(`/products/${paymentForm.value.productIdx}`)
           return
         }
 
         alert('결제 실패')
+        router.push(`/products/${paymentForm.value.productIdx}`)
         return
       }
 
