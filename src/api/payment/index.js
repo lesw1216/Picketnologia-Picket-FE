@@ -16,4 +16,20 @@ const validateSeats = async (req) => {
   return data
 }
 
-export default { validateSeats }
+const getPaymentStatus = async (paymentId) => {
+  let data = {}
+  const url = `/api/payment/${paymentId}/status`
+
+  await api
+    .get(url)
+    .then((res) => {
+      data = res.data
+    })
+    .catch((error) => {
+      data = error.response.data
+    })
+
+  return data
+}
+
+export default { validateSeats, getPaymentStatus }
