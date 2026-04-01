@@ -258,7 +258,7 @@ const nextStep = async () => {
     }
 
     // getSeatStatus 메소드를 실행
-    const statusResponse = await productAPI.getSeatStatusV2(req)
+    const statusResponse = await productAPI.getHeldSeats(req)
 
     if (statusResponse.success) {
       const rockSeats = statusResponse.results
@@ -453,7 +453,7 @@ const deleteRockedSeats = async () => {
     rockedSeats: disabledSeatIdxes.value
   }
 
-  const response = await productAPI.deleteRockedSeats(req)
+  const response = await productAPI.releaseSeats(req)
 }
 
 const targetDate = computed(() => {
