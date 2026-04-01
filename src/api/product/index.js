@@ -151,9 +151,9 @@ const getSeatStatus = async (req) => {
   return data
 }
 
-const getSeatStatusV2 = async (req) => {
+const getHeldSeats = async (req) => {
   let data = {}
-  const url = `/api/seat-status/${req.roundTimeIdx}`
+  const url = `/api/rounds/${req.roundTimeIdx}/seats`
 
   await api
     .get(url)
@@ -167,14 +167,14 @@ const getSeatStatusV2 = async (req) => {
   return data
 }
 
-const deleteRockedSeats = async (req) => {
+const releaseSeats = async (req) => {
   let data = {}
-  const url = '/api/seat-status/' + req.roundTimeIdx
+  const url = `/api/rounds/${req.roundTimeIdx}/seats`
 
   await api
     .delete(url, {
       data: {
-        seatIdxes: req.rockedSeats,
+        seatIds: req.rockedSeats,
       },
     })
     .then((res) => {
@@ -233,8 +233,8 @@ export default {
   getRoundDates,
   searchAndSort,
   getRoundTimes,
-  getSeatStatusV2,
-  deleteRockedSeats,
+  getHeldSeats,
+  releaseSeats,
   getTop5ProductOrderBySalesCount,
   getTop5UpcommingProducts,
 }
