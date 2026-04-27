@@ -1,128 +1,80 @@
-<h1 align="center">🎟️ Picket - Frontend Project</h1>
+﻿# 🎟️ Picket
 
 <p align="center">
-  <img src="img/logo.png" width="400" alt="Picket 로고" />
-  
-<h3 align="center">1팀 - Picketnologia</h3>
+  <img src="./docs/picket_logo.png" width="300" alt="Picket 로고" />
 
-<br /><br />
+# 팀 Picketnologia
 
-# 👨‍💻 팀원 구성
-
-<table align="center">
-  <tr>
-  
-  ![팀원 이미지](./img/super_middle_highlight.png)
-
-  </tr>
-  <tr>
-    <td align="center">
-      <b>최경민</b><br/>
-    </td>
-    <td align="center">
-      <b>강설</b><br/>
-    </td>
-    <td align="center">
-      <b>김원중</b><br/>
-    </td>
-    <td align="center">
-      <b>이상우</b><br/>
-    </td>
-    <td align="center">
-      <b>김광호</b><br/>
-    </td>
-  </tr>
-</table>
-<br /><br />
+> 한화시스템 BEYOND 17기 1팀 Picketnologia 미니 프로젝트 <br>
+> 개발 기간 : 2025.07 ~ 2025.09
 
 # 프로젝트 주소
 
-[www.picket.o-r.kr](https://www.picket.o-r.kr)
+[프로젝트 바로가기 - www.picket.o-r.kr](https://www.picket.o-r.kr)
 
-# 피그마 주소
+> 일반 사용자 <br> > test01@test.com <br> > test03@test.com <br> > <br>
+> 판매자 <br> > test02@test.com
+>
+> <br>
+> 비밀번호는 모두 qwer1234 입니다.
 
-[figma 주소](https://www.figma.com/design/Eahp7OBGzdPdH786uO95Cv/%EC%BB%B4%ED%8F%AC%EB%84%8C%ED%8A%B8-%EC%A0%95%EB%A6%AC?node-id=0-1&t=1yp74xPdMWkxE4xb-1)
+# 프로젝트 소개
 
-# 프로젝트 시연
+Picket은 공연 예매 플랫폼으로서 최근 공연, 전시 스포츠 이벤트에 대한 관심이 높아지면서 기존 플랫폼들의 많은 수요에도 불구하고 실시간성이 부족한 좌석 예매의 아쉬움을 해결하기 위하여 만들어졌습니다.
 
+Picket에서는 실시간 좌석 기능 제공으로 원활한 좌석 예매 경험을 제공합니다.
 
-<details>
-  <summary>로그인</summary>
-  <div markdown="1">
-  <img src="gif/Animation.gif" alt="로그인" />
-  <br>
-  </div>
-</details>
-<br>
+## 기술 스택
 
-<details>
-  <summary>계정찾기</summary>
-  <div markdown="1">
-  <img src="gif/계정찾기.gif" alt="계정찾기" />
-  <br>
-  </div>
-</details>
-<br>
+### Front-end
 
-<details>
-  <summary>계정찾기</summary>
-  <div markdown="1">
-  <img src="gif/비밀번호찾기.gif" alt="비밀번호찾기" />
-  <br>
-  </div>
-</details>
-<br>
+![Vue.js](https://img.shields.io/badge/VUE.JS-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)
 
-<details>
-  <summary>일반 회원가입</summary>
-  <div markdown="1">
-  <img src="gif/일반 회원가입.gif" alt="일반 회원가입" />
-  <br>
-  </div>
-</details>
-<br>
+### Back-end
 
-<details>
-  <summary>판매자 회원가입</summary>
-  <div markdown="1">
-  <img src="gif/판매자 회원가입.gif" alt="판매자 회원가입" />
-  <br>
-  </div>
-</details>
-<br>
+![Spring Boot](https://img.shields.io/badge/SPRING_BOOT-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
 
-<details>
-  <summary>판매자 관리 페이지</summary>
-  <div markdown="1">
-  <img src="gif/판매자 관리 페이지.gif" alt="판매자 관리 페이지" />
-  <br>
-  </div>
-</details>
-<br>
+### DB
 
-<details>
-  <summary>마이 페이지</summary>
-  <div markdown="1">
-  <img src="gif/마이페이지.gif" alt="마이 페이지" />
-  <br>
-  </div>
-</details>
-<br>
+![MariaDB](https://img.shields.io/badge/MARIADB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
+![Redis](https://img.shields.io/badge/REDIS-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 
-<details>
-  <summary>상세페이지</summary>
-  <div markdown="1">
-  <img src="gif/상세페이지.gif" alt="상세페이지" />
-  <br>
-  </div>
-</details>
-<br>
+### DevOps / Infra
 
-<details>
-  <summary>예매하기</summary>
-  <div markdown="1">
-  <img src="gif/예매하기.gif" alt="예매하기" />
-  <br>
-  </div>
-</details>
-<br>
+![Jenkins](https://img.shields.io/badge/JENKINS-D24939?style=for-the-badge&logo=jenkins&logoColor=white)
+![Docker](https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/KUBERNETES-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+
+## ERD
+
+![ERD.png](docs/ERD.png)
+
+## AWS 배포 아키텍처
+
+![실제 배포 아키텍처.png](docs/%EC%8B%A4%EC%A0%9C%20%EB%B0%B0%ED%8F%AC%20%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.png)
+
+## CI / CD 아키텍처
+
+![CI-CD 아키텍처.png](docs/CI-CD%20%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.png)
+
+## 주요 기능
+
+### 회원가입 / 로그인
+
+![register and login.gif](docs/%EA%B8%B0%EB%8A%A5%20%EB%8F%99%EC%9E%91/register%20and%20login.gif)
+
+### 비밀번호 찾기
+
+![findPassword.gif](docs/%EA%B8%B0%EB%8A%A5%20%EB%8F%99%EC%9E%91/findPassword.gif)
+
+### 실시간 좌석 예매 동시성 제어
+
+공연 예매 시 다수의 사용자가 동시에 좌석 예매 화면에서 실시간으로 확인 할 수 있습니다.
+
+![ Concurrency Control2.gif](docs/%EA%B8%B0%EB%8A%A5%20%EB%8F%99%EC%9E%91/%20Concurrency%20Control2.gif)
+
+### 결제
+
+좌석을 선택하고 다음 단계를 진행하면 결제를 진행 할 수 있습니다.
+
+![buyTicket.gif](docs/%EA%B8%B0%EB%8A%A5%20%EB%8F%99%EC%9E%91/buyTicket.gif)
