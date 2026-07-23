@@ -12,6 +12,14 @@ const loginUser = reactive({
     password: ''
 });
 
+// 면접관이 타이핑 없이 원클릭으로 로그인할 수 있도록 제공하는 데모 계정
+const demoAccounts = [
+    { email: 'user01@test.com', role: '일반 회원' },
+    { email: 'user02@test.com', role: '일반 회원' },
+    { email: 'seller@test.com', role: '판매자' },
+];
+const DEMO_PASSWORD = 'qwer1234';
+
 const login = async () => {
     const response = await api.memberLogin(loginUser);
     if (response.success) {
@@ -20,6 +28,12 @@ const login = async () => {
     } else {
         alert('로그인 실패: ' + response.message);
     }
+};
+
+const quickLogin = (email) => {
+    loginUser.email = email;
+    loginUser.password = DEMO_PASSWORD;
+    login();
 };
 
 </script>
@@ -51,6 +65,26 @@ const login = async () => {
                                 <button class="btn btn-primary w-100 py-2 mt-4" type="button" @click="login">
                                     로그인
                                 </button>
+
+                                <div class="border rounded-3 p-3 mt-4 bg-body-tertiary">
+                                    <p class="small text-secondary fw-semibold mb-2">
+                                        데모 계정
+                                        <span class="fw-normal">(클릭 시 바로 로그인)</span>
+                                    </p>
+                                    <div class="d-grid gap-2">
+                                        <button v-for="account in demoAccounts" :key="account.email"
+                                            type="button"
+                                            class="btn btn-outline-secondary btn-sm d-flex justify-content-between align-items-center"
+                                            @click="quickLogin(account.email)">
+                                            <span>{{ account.email }}</span>
+                                            <span class="badge text-bg-light">{{ account.role }}</span>
+                                        </button>
+                                    </div>
+                                    <p class="small text-secondary text-center mb-0 mt-2">
+                                        공통 비밀번호: qwer1234
+                                    </p>
+                                </div>
+
                                 <div class="text-center mt-4">
                                     <RouterLink to="/find-email" class="text-decoration-none text-secondary small">
                                         아이디 찾기
